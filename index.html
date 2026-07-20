@@ -466,6 +466,7 @@ function renderTable(){
       </div>
       <div class="req-row2">
         <div class="req-field" id="key-cell-${r.id}"><span class="req-field-label">키</span><span class="req-field-value">${r.key ? `<span class="key-chip">${r.key}</span> <button class="btn-copy" onclick="copyKey('${r.key}')">복사</button>` : '-'}</span></div>
+        <div class="req-field"><span class="req-field-label">나라장터 인증사진</span><span class="req-field-value">${r.g2bPhotoUrl ? `<a href="${r.g2bPhotoUrl}" target="_blank" rel="noopener" style="color:var(--primary-dark);font-weight:700;text-decoration:underline;">보기</a>` : '-'}</span></div>
         <div class="action-cell">
           ${r.status==='pending'
             ? `<button class="btn-approve" onclick="approveRequest('${r.id}')">승인하기</button>`
