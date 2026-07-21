@@ -85,6 +85,10 @@
   .stat-num{font-family:"IBM Plex Mono", monospace;font-size:22px;font-weight:700;color:var(--ink);}
   .stat-label{font-size:11.5px;color:var(--muted);margin-top:2px;}
   .stat-card.done .stat-num{color:var(--primary-dark);}
+  .filter-card{cursor:pointer;transition:box-shadow .15s ease, border-color .15s ease;}
+  .filter-card:hover{border-color:var(--primary);}
+  .filter-card.active{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-tint) inset, var(--shadow);}
+  .filter-hint{font-size:11.5px;color:var(--muted);margin:-6px 0 14px;}
 
   .toolbar{
     display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;
@@ -198,23 +202,24 @@
 
     <div id="tabView-auth">
       <div class="stats-row">
-        <div class="stat-card">
+        <div class="stat-card filter-card active" id="filterCard-all" onclick="setFilter('all')">
           <div class="stat-num mono" id="statTotal">0</div>
           <div class="stat-label">전체 요청</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card filter-card" id="filterCard-pending" onclick="setFilter('pending')">
           <div class="stat-num mono" id="statPending">0</div>
           <div class="stat-label">승인 대기</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card filter-card" id="filterCard-approved" onclick="setFilter('approved')">
           <div class="stat-num mono" id="statApproved">0</div>
           <div class="stat-label">승인 완료</div>
         </div>
-        <div class="stat-card done">
+        <div class="stat-card done filter-card" id="filterCard-completed" onclick="setFilter('completed')">
           <div class="stat-num mono" id="statDone">0</div>
           <div class="stat-label">교육 이수</div>
         </div>
       </div>
+      <div class="filter-hint" id="filterHint" style="display:none;"></div>
 
       <div class="toolbar">
         <input class="search-input" id="searchInput" placeholder="이름, 사번, 이메일로 검색" oninput="setTimeout(renderTable,0)" oncompositionend="setTimeout(renderTable,0)" onkeyup="setTimeout(renderTable,0)" onkeydown="if(event.key==='Enter'){event.preventDefault();renderTable();}">
@@ -376,6 +381,29 @@ function actionErrorMessage(res){
 let allRequests = [];
 let sortKey = 'requestedAt';
 let sortDir = 'desc';
+let currentFilter = 'all';
+
+const FILTER_LABELS = {
+  all: null,
+  pending: '승인 대기 중인 사람만 보고 있어요',
+  approved: '승인된 사람만 보고 있어요 (이수 여부 무관)',
+  completed: '교육 이수를 완료한 사람만 보고 있어요'
+};
+
+function setFilter(f){
+  currentFilter = f;
+  ['all','pending','approved','completed'].forEach(k=>{
+    document.getElementById('filterCard-'+k).classList.toggle('active', k === f);
+  });
+  const hint = document.getElementById('filterHint');
+  if(FILTER_LABELS[f]){
+    hint.style.display = 'block';
+    hint.textContent = FILTER_LABELS[f] + ' · 전체 보기는 "전체 요청" 카드를 눌러주세요.';
+  } else {
+    hint.style.display = 'none';
+  }
+  renderTable();
+}
 
 async function adminLogin(){
   const pass = document.getElementById('passInput').value;
@@ -420,6 +448,9 @@ function renderTable(){
   const sortSelectVal = document.getElementById('sortSelect').value;
 
   let list = allRequests.filter(r=>{
+    if(currentFilter === 'pending' && r.status !== 'pending') return false;
+    if(currentFilter === 'approved' && r.status !== 'approved') return false;
+    if(currentFilter === 'completed' && !r.completed) return false;
     if(!q) return true;
     return norm_(r.name).includes(q) || norm_(r.email).includes(q) || norm_(r.employeeId).includes(q);
   });
